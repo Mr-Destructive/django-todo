@@ -3,4 +3,9 @@
 {% block body %}
 
 <h2> Create Task </h2>
+<form method="POST" >
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" name="Create"/>
+</form>
 {% endblock %}
