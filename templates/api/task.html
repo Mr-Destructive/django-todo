@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+
+{% block body %}
+{% if tasks.status == "pending" %}
+    <h2 >{{ tasks.task }}</h2>
+    {% else %}
+    <h2 style="text-decoration:line-through;">{{ tasks.task }}</h2>
+    {% endif %}
+{% endblock %}

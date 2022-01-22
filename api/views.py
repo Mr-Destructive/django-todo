@@ -1,33 +1,79 @@
 from django.shortcuts import render, redirect
-from django.urls import reverse
-from django.views.generic import CreateView
-from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.renderers import TemplateHTMLRenderer
+from rest_framework.permissions import IsAuthenticated
 from .serializers import TaskSerializer
 from .models import Todo
 from .forms import TaskForm
 
 class CreateTask(APIView):
+    renderer_classes = [TemplateHTMLRenderer]
+    permission_classes = (IsAuthenticated,)
+
     def get(self, request, format=None):
         form = TaskForm()
-        return render(request,'api/create.html', {'form': form})
+        return Response({'form': form}, template_name='api/create.html')
 
     def post(self, request, format=None):
         serializer = TaskSerializer(data = request.data)
-        print(request.data)
         if(serializer.is_valid()):
-            serializer['author']=request.user
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            serializer.save(author=request.user)
+            return Response({'tasks':serializer.data}, template_name='api/task.html')
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class TaskList(APIView):
-    def get(self, request, format=None):
-        tasks = Todo.objects.all()
+
+class UpdateTask(APIView):
+
+    renderer_classes = [TemplateHTMLRenderer]
+
+    def get(self, request, pk, format=None):
+        form = TaskForm()
+        return Response({'form': form}, template_name='api/update.html')
+
+    def post(self, request, pk, format=None):
+        task = Todo.objects.get(id=pk)
+        serializer = TaskSerializer(instance=task, data=request.data)
+        if(serializer.is_valid()):
+            serializer.save(author=request.user)
+            return Response({'tasks':serializer.data}, template_name='api/task.html')
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class DeleteTask(APIView):
+
+    renderer_classes = [TemplateHTMLRenderer]
+
+    def get(self, request,pk, format=None):
+        task = Todo.objects.get(id=pk)
+        task.delete()
+        tasks = Todo.objects.filter(author=request.user)
         serializer = TaskSerializer(tasks, many=True)
-        return Response(serializer.data)
+        return Response({'tasks':serializer.data}, template_name='base.html')
+
+class Index(APIView):
+
+    renderer_classes = [TemplateHTMLRenderer]
+
+    def get(self, request, format=None):
+        if request.user.id:
+            tasks = Todo.objects.filter(author=request.user)
+            serializer = TaskSerializer(tasks, many=True)
+            return Response({'tasks':serializer.data}, template_name='base.html')
+        return Response(template_name='base.html')
+
+class GetTask(APIView):
+    renderer_classes = [TemplateHTMLRenderer]
+    permission_classes = (IsAuthenticated,)
+    def get(self, request,pk , format=None):
+        tasks = Todo.objects.get(id=pk)
+        serializer = TaskSerializer(tasks, many=False)
+        return Response({'tasks':serializer.data}, template_name='api/task.html')
+
+'''
+from django.urls import reverse
+from django.views.generic import CreateView
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 class AddTask(LoginRequiredMixin, CreateView):
     model = Todo
@@ -41,3 +87,4 @@ class AddTask(LoginRequiredMixin, CreateView):
 
     def get_success_url(self):
         return reverse('listview')
+'''

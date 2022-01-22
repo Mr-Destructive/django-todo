@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+
+{% block body %}
+
+<h2>Delete Task</h2>
+<form method="POST" >
+    {% csrf_token %}
+    <input type="submit" name="Delete"/>
+</form>
+{% endblock %}
